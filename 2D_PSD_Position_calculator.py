@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D  # 3D描画用
 import config
 
 
-#ｙ軸の点線に対してHorizontal方向にある角度回した線を描画
+#z軸に対してHorizontal方向にある角度回す関数
 def rotate_z_cw(vec: np.ndarray, deg: float) -> np.ndarray:
     theta = np.deg2rad(-deg)
     c, s = np.cos(theta), np.sin(theta)
@@ -13,10 +13,7 @@ def rotate_z_cw(vec: np.ndarray, deg: float) -> np.ndarray:
                    [0,  0, 1]])
     return vec @ Rz.T
 
-
-
-
-if __name__ == "__main__":
+def Figure_3D():
     # 3Dプロットのセットアップ
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection='3d')
@@ -40,8 +37,29 @@ if __name__ == "__main__":
     z = r * np.outer(np.ones(np.size(u)), np.cos(v))
     ax.plot_surface(x, y, z, color='b', alpha=0.6)
 
+    #y軸の点線に対してHorizontal方向にある角度回した線を描画
+    y_line = np.array([0, config.SDD, 0])
+    rotated_y_line = rotate_z_cw(y_line, config.D2th)
+    rotated_y_line_unit = rotated_y_line / np.linalg.norm(rotated_y_line)
+    ax.plot([0, rotated_y_line[0]], [0, rotated_y_line[1]], [0, rotated_y_line[2]], color='blue', linestyle='-')
+
+    # ── xy 平面内の法線 n を作る（v に直交） ─────────────
+    n = np.array([-rotated_y_line[1], rotated_y_line[0], 0.0])
+    n = n / np.linalg.norm(n)*config.DW
+    # ── 可視化（rotated_y_lineから法線を描く） ───────────────────
+    ax.plot([rotated_y_line[0]-n[0]/2, rotated_y_line[0] + n[0]/2],
+            [rotated_y_line[1]-n[1]/2, rotated_y_line[1] + n[1]/2],
+            [rotated_y_line[2]-n[2]/2, rotated_y_line[2] + n[2]/2],
+            color='blue', linestyle='-')
+    return ax
+
+
+if __name__ == "__main__":
+    ax = Figure_3D()
+
     #y軸にkiの線を描画
-    ki = np.array([0, 1000, 0])
+    scale_ki = 1000 #グラフで見やすくするための適当な係数
+    ki = np.array([0, 1, 0])*scale_ki
     ax.plot([0, ki[0]], [0, ki[1]], [0, ki[2]], color='gray', linestyle='--')
 
     #検出器をイメージした四角形を描画
@@ -57,8 +75,9 @@ if __name__ == "__main__":
     Det_center_xy = Detector_Rectangle_rotated[:, :2].mean(axis=0)
     Det_C = np.append(Det_center_xy, 0.0)         # shape (3,)
     # ─── 3. 自転：中心点まわりに β 回す ────────
-    Detector_Rectangle_tilted = rotate_z_cw((Detector_Rectangle_rotated-Det_C), config.DTilt)
-    ax.plot(Detector_Rectangle_tilted[:,0]+Det_C[0], Detector_Rectangle_tilted[:,1]+Det_C[1], Detector_Rectangle_tilted[:,2]+Det_C[2],color='gray', linestyle='-')
+    Detector_Rectangle_spinned = rotate_z_cw((Detector_Rectangle_rotated-Det_C), config.DTilt)
+    Detector_Rectangle_tilted = Detector_Rectangle_spinned + Det_C
+    ax.plot(Detector_Rectangle_tilted[:,0], Detector_Rectangle_tilted[:,1], Detector_Rectangle_tilted[:,2],color='gray', linestyle='-')
 
     #指定したx,y channelの位置を描画　(kfの描画)
     kf = np.array([config.DW*(config.x_ch-config.XPN/2)/config.XPN,config.SDD,config.DH*(config.y_ch-config.YPN/2)/config.YPN])
@@ -72,6 +91,7 @@ if __name__ == "__main__":
     kf_tilted = kf_spinned + kf_C
     ax.plot([0,kf_tilted[0]], [0,kf_tilted[1]], [0,kf_tilted[2]],color='red', linestyle='-')
 
+
     #kfを規格化
     kf_unit = kf_tilted / np.linalg.norm(kf_tilted)
     #kiを規格化
@@ -79,22 +99,5 @@ if __name__ == "__main__":
     #Q vectorを描画
     Q = (kf_unit - ki_unit)
     print("Q",Q)
-    ax.plot([0,Q[0]], [0,Q[1]], [0,Q[2]],color='green', linestyle='-')
-
-    #y軸の点線に対してHorizontal方向にある角度回した線を描画
-    y_line = np.array([0, config.SDD, 0])
-    rotated_y_line = rotate_z_cw(y_line, config.D2th)
-    rotated_y_line_unit = rotated_y_line / np.linalg.norm(rotated_y_line)
-    ax.plot([0, rotated_y_line[0]], [0, rotated_y_line[1]], [0, rotated_y_line[2]], color='blue', linestyle='-')
-
-    # ── xy 平面内の法線 n を作る（v に直交） ─────────────
-    n = np.array([-rotated_y_line[1], rotated_y_line[0], 0.0])
-    n = n / np.linalg.norm(n)*config.DW
-    # ── 可視化（rotated_y_lineから法線を描く） ───────────────────
-    ax.plot([rotated_y_line[0]-n[0]/2, rotated_y_line[0] + n[0]/2],
-            [rotated_y_line[1]-n[1]/2, rotated_y_line[1] + n[1]/2],
-            [rotated_y_line[2]-n[2]/2, rotated_y_line[2] + n[2]/2],
-            color='blue', linestyle='-')
 
     plt.show()
-
