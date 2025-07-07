@@ -11,7 +11,7 @@ if __name__ == "__main__":
     Intensity=np.zeros((int(config.mesh_size),int(config.mesh_size)))
     dataNum=np.zeros((int(config.mesh_size),int(config.mesh_size)))
 
-    Scan_dataframe = pd.read_csv(f"../../2025/June/DAQ_Data/DAQ{config.RunNumber}/Scan_dataframe.csv")
+    Scan_dataframe = pd.read_csv(f"../../2025/June/DAQ_Data/DAQ{config.RunNumber}/DAQ{config.RunNumber}_ScanDataframe.csv")
     dQx=(config.Qx_range[1]-config.Qx_range[0])/config.mesh_size
     dQy=(config.Qy_range[1]-config.Qy_range[0])/config.mesh_size
     print(Scan_dataframe)
@@ -38,17 +38,17 @@ if __name__ == "__main__":
             Qy=config.Qy_range[0]+dQy*j
             if Intensity[i][j] > 0:
                 FHR.write("{0}  {1}  {2}  {3}\n".format(Qx,Qy,Intensity[i][j],dataNum[i][j]))
+                print(i,j,Qx,Qy,Intensity[i][j])
             else:
                 FHR.write("{0}  {1}  {2}  {3}\n".format(Qx,Qy,-1000,dataNum[i][j]))
                 Intensity[i][j]=-1000
-            print(Qx,Qy,Intensity[i][j])
     FHR.close()
     QX,QY = np.meshgrid(np.linspace(config.Qx_range[0],config.Qx_range[1],config.mesh_size),np.linspace(config.Qy_range[0],config.Qy_range[1],config.mesh_size))
     im = plt.pcolormesh(QX,QY,Intensity, cmap='viridis', vmin=-2000, vmax=5000)
     cbar = plt.colorbar(im)
     cbar.set_label("Intensity")
-    plt.xlabel("Qx")
-    plt.ylabel("Qy")
+    plt.xlabel("Qx [A$^{-1}$]")
+    plt.ylabel("Qy [A$^{-1}$]")
     plt.show()
 
 
